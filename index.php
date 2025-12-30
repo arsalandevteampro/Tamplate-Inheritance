@@ -1,26 +1,43 @@
 <?php
 
-require_once 'src/MiniBlade.php';
+// Autoloader
+spl_autoload_register(function ($class) {
+    $prefix = 'App\\';
+    $base_dir = __DIR__ . '/src/';
 
-$blade = new MiniBlade(__DIR__ . '/views');
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
 
-$requestUri = $_SERVER['REQUEST_URI'];
-$path = parse_url($requestUri, PHP_URL_PATH);
-$path = trim($path, '/');
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
 
-// Default to home if path is empty
-$view = empty($path) ? 'home' : $path;
+    if (file_exists($file)) {
+        require $file;
+    }
+});
 
-// Basic safety check
-$view = basename($view);
+use App\Router;
+use App\Controllers\UserController;
 
-// Handle 404 if view doesn't exist
-if (!file_exists(__DIR__ . "/views/$view.php")) {
-    http_response_code(404);
-    echo "404 - View '$view' not found";
-    exit;
-}
+// Define Routes
 
-echo $blade->render($view, [
-    'message' => 'Hello from MiniBlade!'
-]);
+// Simple Closure Route
+Router::get('/home', function () {
+    echo "<h1>Welcome Home</h1>";
+});
+
+Router::get('/', function () {
+     echo "<h1>Welcome Index</h1>";
+});
+
+// Controller Routes
+Router::get('/users', [UserController::class, 'index']);
+Router::get('/users/{id}', [UserController::class, 'show']);
+
+// Multiple Parameters
+Router::get('/post/{postId}/comment/{commentId}', [UserController::class, 'storedPost']);
+
+// Dispatch
+Router::dispatch();

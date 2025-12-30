@@ -1,12 +1,13 @@
-# MiniBlade Template Engine
+# MiniFrame (MiniBlade + Custom Router)
 
-A lightweight PHP template engine inspired by Laravel Blade, featuring inheritance, sections, and automated routing.
+A lightweight PHP micro-framework featuring a Laravel-like Router and the MiniBlade template engine.
 
 ## Features
 
-- **Template Inheritance**: Helper methods `@extend` and `@yield` (implemented as `$this->extend` and `$this->yield`).
-- **Sections**: Define content blocks with `$this->section` and `$this->endSection`.
-- **Clean URLs**: Automated routing support for pretty URLs (e.g., `/about` maps to `views/about.php`).
+- **Custom Router**: Define routes with `Router::get`, `Router::post`, etc.
+- **Controller Support**: Route requests to controller classes and methods.
+- **Dynamic Parameters**: Support for `{id}` style parameters in URLs.
+- **Template Inheritance**: MiniBlade engine with `@extend` and `@yield` syntax.
 - **Zero Dependencies**: Pure PHP implementation.
 
 ## Directory Structure
@@ -14,13 +15,16 @@ A lightweight PHP template engine inspired by Laravel Blade, featuring inheritan
 ```
 /
 ├── src/
-│   └── MiniBlade.php      # Core Engine Logic
+│   ├── MiniBlade.php      # Template Engine
+│   ├── Router.php         # Routing Logic
+│   └── Controllers/       # Controller Classes
+│       └── UserController.php
 ├── views/
 │   ├── layouts/
 │   │   └── main.php       # Master Layout
 │   ├── home.php           # Home View
 │   └── about.php          # About View
-├── index.php              # Front Controller & Router
+├── index.php              # Front Controller & Route Definitions
 └── .htaccess              # Apache Rewrite Rules
 ```
 
@@ -28,48 +32,65 @@ A lightweight PHP template engine inspired by Laravel Blade, featuring inheritan
 
 1. Clone or copy this repository to your web server (e.g., `/var/www/html/demo`).
 2. Ensure your web server (Apache) supports `.htaccess` and has `mod_rewrite` enabled.
-3. Access the site via your browser (e.g., `http://demo.local/`).
+3. Access the site via your browser (e.g., `http://localhost/demo/`).
 
 ## Usage
 
-### Creating a Layout
+### Defining Routes
 
-Create a file in `views/layouts/` (e.g., `main.php`):
+Routes are defined in `index.php` using the `Router` class.
 
+```php
+use App\Router;
+use App\Controllers\UserController;
+
+// Closure Route
+Router::get('/home', function() {
+    echo "Welcome Home";
+});
+
+// Controller Route
+Router::get('/users/{id}', [UserController::class, 'show']);
+
+// POST Route
+Router::post('/submit', [UserController::class, 'store']);
+```
+
+### Creating Controllers
+
+Create a controller in `src/Controllers/`:
+
+```php
+namespace App\Controllers;
+
+class UserController
+{
+    public function show($id)
+    {
+        echo "User Profile for ID: $id";
+    }
+}
+```
+
+### Templating (MiniBlade)
+
+Views are stored in `views/`. Use `$blade->render()` in your routes/controllers.
+
+**Layout (`views/layouts/main.php`):**
 ```php
 <!DOCTYPE html>
 <html>
-<head>
-    <title><?php $this->yield('title'); ?></title>
-</head>
 <body>
-    <div class="container">
-        <?php $this->yield('content'); ?>
-    </div>
+    <?php $this->yield('content'); ?>
 </body>
 </html>
 ```
 
-### Creating a Page
-
-Create a file in `views/` (e.g., `contact.php`). It will be automatically accessible at `/contact`.
-
+**Page (`views/home.php`):**
 ```php
 <?php $this->extend('layouts/main'); ?>
 
-<?php $this->section('title'); ?>
-Contact Us
-<?php $this->endSection(); ?>
-
 <?php $this->section('content'); ?>
-    <h1>Contact Page</h1>
-    <p>Get in touch with us!</p>
+    <h1>Home Page</h1>
 <?php $this->endSection(); ?>
 ```
-
-## Routing
-
-The `index.php` file handles routing automatically. 
-- URL `/foo` will look for `views/foo.php`.
-- URL `/` will look for `views/home.php`.
-- Returns 404 if the view file does not exist.
